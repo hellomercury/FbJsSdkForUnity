@@ -13,21 +13,32 @@ public class FackbookListener : MonoBehaviour
 
     public void RegisterListener(string InEventName, Action<string> InCallback)
     {
-        jsSdkCallbackDicts[InEventName] += InCallback;
+        if (jsSdkCallbackDicts.ContainsKey(InEventName))
+            jsSdkCallbackDicts[InEventName] += InCallback;
+        else
+            jsSdkCallbackDicts[InEventName] = InCallback;
     }
 
-    private void JsSdkCallbackListener(string InKey, string InValue)
+    private void JsSdkCallbackListener(string InParam)
     {
-        Action<string> callback;
-        if (jsSdkCallbackDicts.TryGetValue(InKey, out callback))
+        string[] values = InParam.Split('^');
+        if (values.Length == 2)
         {
-            callback.Invoke(InValue);
+            Action<string> callback;
+            if (jsSdkCallbackDicts.TryGetValue(values[0], out callback))
+            {
+                callback.Invoke(values[1]);
 
-            jsSdkCallbackDicts.Remove(InKey);
+                jsSdkCallbackDicts.Remove(values[0]);
+            }
+            else
+            {
+                Debug.LogError("Js sdk callback not register listener.\nkey = " + values[0] + "\nvalue = " + values[1]);
+            }
         }
         else
         {
-            Debug.LogError("Js sdk callback not register listener.\nkey = " + InKey + "\nvalue = " + InValue);
+            Debug.LogError("Js sdk callback param error.");
         }
     }
 }

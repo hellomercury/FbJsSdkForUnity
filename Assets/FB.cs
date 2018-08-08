@@ -1,25 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using LitJson;
 using UnityEngine;
 
 public static class FB
 {
+    public static bool IsLoggedIn = true;
+    public static string AccessToken { get; private set; }
+    public static string UserId { get; private set; }
+
+
     private static FackbookListener listener;
-    public static void Init()
+    public static void Init(Action InInitFinAction)
     {
         string fbCallbackGoName = "FackbookListener";
         GameObject fbCallbackGo = new GameObject(fbCallbackGoName);
         listener = fbCallbackGo.AddComponent<FackbookListener>();
-        Application.ExternalCall("init", fbCallbackGoName, "JsSdkCallbackListener");
-    }
+        string key = "getFbInfo";
+        listener.RegisterListener(key, result =>
+        {
+            JsonData jd = JsonMapper.ToObject(result);
 
-    public static void GetAccessToken(Action<string> InCallback)
-    {
-        string key = "AccessToken";
+            AccessToken = (string)jd["accessToken"];
+            UserId = (string)jd["userId"];
 
-        listener.RegisterListener(key, InCallback);
+            InInitFinAction.Invoke();
+        });
 
-        Application.ExternalCall("getAccessToken", key);
+        Application.ExternalCall("init", fbCallbackGoName, "JsSdkCallbackListener", key);
     }
 
     public static void GetPlayerInfo(Action<string> InCallback)
@@ -78,5 +86,36 @@ public static class FB
         Application.ExternalCall("share", InShareLink, key);
     }
 
+    public static void GetFriends(Action<string> InCallbakcAction)
+    {
+        string key = "Friends";
 
+        listener.RegisterListener(key, InCallbakcAction);
+
+        Application.ExternalCall("getFriends", key);
+    }
+
+    public static void AppRequest(string InMsg, string InFriendId, Action<string> InCallbakcAction)
+    {
+        string key = "AppRequest";
+
+        listener.RegisterListener(key, InCallbakcAction);
+
+        Application.ExternalCall("appRequest", key);
+    }
+
+    public static void ActivateApp()
+    {
+        Application.ExternalCall("activateApp");
+    }
+
+    public static void SpentCoins(int InCoins, string InParam)
+    {
+        Application.ExternalCall("spentCreditsEvent", InCoins, InParam);
+    }
+
+    public static void AchievedLevel(string InLevelNum)
+    {
+        Application.ExternalCall("achievedLevelEvent", InLevelNum);
+    }
 }

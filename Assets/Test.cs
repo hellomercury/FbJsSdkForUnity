@@ -8,16 +8,30 @@ public class Test : MonoBehaviour
 
     void Start()
     {
-        FB.Init();
+ 
     }
 
     void OnGUI()
     {
-        if (GUILayout.Button("GetFbAccessToken"))
+        if (GUILayout.Button("Init"))
         {
-            FB.GetAccessToken(accessToken =>
+            FB.Init(() =>
             {
-                Debug.LogError("FB access token = " + accessToken);
+                Debug.LogError("Init finished.");
+                Debug.LogError("Access token = " + FB.AccessToken);
+                Debug.LogError("user id = " + FB.UserId);
+            });
+        }
+
+        if (GUILayout.Button("Player Info"))
+        {
+            FB.GetPlayerInfo(playerInfo =>
+            {
+                JsonData jd = JsonMapper.ToObject(playerInfo);
+                Debug.LogError("player info id = " + (string)jd["id"]);
+                Debug.LogError("name = " + (string)jd["name"]);
+                Debug.LogError("url = " + (string)jd["picture"]["data"]["url"]);
+
             });
         }
 
@@ -60,25 +74,37 @@ public class Test : MonoBehaviour
                 });
         }
 
-        if (GUILayout.Button("Player Info"))
+        if (GUILayout.Button("Get Friends"))
         {
-            //FB.GetPlayerInfo(playerInfo =>
-            //{
-            //    JsonData jd = JsonMapper.ToObject(playerInfo);
+            FB.GetFriends(friends =>
+            {
+                JsonData jd = JsonMapper.ToObject(friends);
+                JsonData friendArray = jd["data"];
+                int count = friendArray.Count;
 
-            //});
+                if (count > 0)
+                {
+                    string log = string.Empty;
+                    for (int i = 0; i < count; ++i)
+                    {
+                        JsonData itemJd = friendArray[i];
+                        log += "\"id\":" +(string)itemJd["id"] + ", ";
+                        log += "\"name\":" + (string)itemJd["name"] + ", ";
+                        log += "\"url\":" + (string)itemJd["picture"]["data"]["url"];
+                        log += "\n";
+                    }
+                    
+                    Debug.LogError(log);
+                }
+            });
+        }
 
-            //string json = "{\"id\":\"118265425774845\",\"name\":\"Dave Albggdafdheeb Valtchanovman\",\"email\":\"ionxmyiywq_1533543562 @tfbnw.net\",\"picture\":{\"data\":{\"height\":120,\"is_silhouette\":true,\"url\":\"https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=118265425774845&height=120&width=120&ext=1536141642&hash=AeRNlBZ5gDKGSZRR\",\"width\":120}}}";
-            //JsonData jd = JsonMapper.ToObject(json);
-            //Debug.LogError(jd["id"]);
-            //Debug.LogError(jd["name"]);
-            //if(jd["picture1"] == null) Debug.LogError("2222");
-            //Debug.LogError(jd["picture"]["data"]["url"]);
-
-
-            string json1 = "{\"data\":[]}";
-            JsonData jd = JsonMapper.ToObject(json1);
-            Debug.LogError(jd["data"].Count);
+        if (GUILayout.Button("App Request"))
+        {
+            FB.AppRequest("Invite friends test.", "", result =>
+            {
+                Debug.LogError("App Request result = " + result);
+            });
         }
     }
 }
